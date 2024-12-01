@@ -1,0 +1,122 @@
+esphome:
+  name: esp_atelier
+  friendly_name: esp_atelier
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  #level: VERBOSE
+
+
+# Enable Home Assistant API
+api:
+  
+ota:
+
+
+wifi:
+  ssid: ""
+  password: ""
+
+sensor:
+  - platform: dht
+    model: "DHT11"
+    pin: GPIO19
+    temperature:
+     id: "temperature_atelier"
+     name: "Atelier・Temperature"
+    humidity:
+     id: "humidity_atelier"
+     name: "Atelier・Humidité"
+    update_interval: 2s
+
+i2c:
+  - id: ecran_a
+    sda: GPIO21
+    scl: GPIO22
+  - id: ecran_b
+    sda: GPIO17
+    scl: GPIO16
+
+font:
+  - file: 'Oswald-VariableFont_wght.ttf'
+    id: font1
+    size: 17
+    
+  - file: 'Oswald-VariableFont_wght.ttf'    
+    id: font2
+    size: 60
+    
+  - file: 'Oswald-VariableFont_wght.ttf'   
+    id: font3
+    size: 40
+    
+  - file: 'Oswald-VariableFont_wght.ttf'   
+    id: font4
+    size: 48
+  - file: 'Oswald-VariableFont_wght.ttf'   
+    id: font5
+    size: 52
+
+time:
+  - platform: homeassistant
+    id: esptime
+
+display:
+  - platform: ssd1306_i2c
+    i2c_id: ecran_a
+    model: "SSD1306 128x64"
+    address: 0x3C
+    lambda: |-
+     // Print time in HH:MM format
+      it.strftime(0, 60, id(font2), TextAlign::BASELINE_LEFT, "%H:%M", id(esptime).now()); 
+  
+  - platform: ssd1306_i2c
+    i2c_id: ecran_b
+    model: "SSD1306 128x64"
+    address: 0x3C
+    id: my_display
+    pages:
+      - id: temparatureaff
+        lambda: |-
+         it.printf(0, 0, id(font4), "%.1f°C", id(temperature_atelier).state);
+      - id: humidityaff
+        lambda: |-
+         it.printf(0, 0, id(font5), "%.f%%", id(humidity_atelier).state);
+
+interval:
+  - interval: 10s
+    then:
+      - display.page.show_next: my_display
+      - component.update: my_display
+
+binary_sensor:
+  - platform: gpio
+    pin: GPIO23
+    name: "Atelier・Détecteur"
+    device_class: motion
+  - platform: gpio
+    pin: 
+      number: GPIO33
+      mode: INPUT_PULLUP
+      inverted: true
+    name: "Bouton Rouge"
+
+switch:
+  - platform: gpio
+    name: "LED Bleue"
+    pin:
+      number: GPIO25
+  - platform: gpio
+    name: "LED Rouge"
+    pin:
+      number: GPIO26
+  - platform: gpio
+    name: "LED Verte"
+    pin:
+      number: GPIO27
+ 
